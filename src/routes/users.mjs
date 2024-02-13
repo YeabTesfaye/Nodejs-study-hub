@@ -15,6 +15,8 @@ router.get(
     const result = validationResult(request);
     // do something with result object
     console.log(result);
+    console.log(request.session);
+    console.log(request.session.id)
     const {
       query: { filter, value },
     } = request;
