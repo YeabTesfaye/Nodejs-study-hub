@@ -3,6 +3,8 @@ import router from "./routes/index.mjs";
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import { mockUsers } from "./utils/constant.mjs";
+import passport from "passport";
+import "./strategies/local-strategy.mjs";
 const PORT = process.env.PORT || 3000;
 
 const app = express();
@@ -18,8 +20,15 @@ app.use(
     },
   })
 );
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(router);
 
+app.post("/api/auth", passport.authenticate("local"), (request, response) => {
+  return response.sendStatus(200);
+});
 app.get("/", (request, response) => {
   console.log(request.session);
   console.log(request.sessionID);
@@ -47,9 +56,8 @@ app.post("/api/auth", (request, response) => {
 });
 
 app.get("/api/auth/status", (request, response) => {
-  return request.session.user
-    ? response.status(200).send(request.session.user)
-    : response.status(401).send({ msg: "Not Authenticated" });
+  console.log(request.user);
+  return request.user ? response.send(request.user) : response.sendStatus(401);
 });
 
 app.post("/api/cart", (request, response) => {
@@ -57,17 +65,17 @@ app.post("/api/cart", (request, response) => {
 
   const { body: item } = request;
 
-  const {cart} = request.session;
-  if(cart) cart.push(item);
-  else request.session.cart  = [item];
+  const { cart } = request.session;
+  if (cart) cart.push(item);
+  else request.session.cart = [item];
 
   return response.status(201).send(item);
 });
 
 app.get("/api/cart", (request, response) => {
-  if(!request.session.user) return response.sendStatus(401);
-  return response.send(request.session.cart ?? [])
-})
+  if (!request.session.user) return response.sendStatus(401);
+  return response.send(request.session.cart ?? []);
+});
 app.listen(PORT, () => {
   console.log(`Running on PORT ${PORT}`);
 });
