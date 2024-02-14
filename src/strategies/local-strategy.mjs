@@ -1,28 +1,28 @@
 import passport from "passport";
 import { Strategy } from "passport-local";
-import { mockUsers } from "../utils/constant.mjs";
+import { User } from "../mongoose/schemas/user.mjs";
+import { comparePassword } from "../utils/helper.mjs";
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
-passport.deserializeUser((id, done) => {
+passport.deserializeUser(async (id, done) => {
   try {
-    const findUser = mockUsers.find((user) => user.id === id);
-    if (!findUser) throw new Error("User not found");
+    const findUser = await User.findById(id);
     done(null, findUser);
   } catch (error) {
     done(error, null);
   }
 });
 export default passport.use(
-  new Strategy((username, password, done) => {
+  new Strategy(async (username, password, done) => {
     try {
-      const findUser = mockUsers.find((user) => user.username === username);
-      console.log("USer ",findUser)
+      const findUser = await User.findOne({ username });
       if (!findUser) throw new Error("User not found");
-      if (findUser.password !== password)
-        throw new Error("Invalid Credentials");
+
+      if (!comparePassword(password, findUser.password))
+        throw new Error("Bad Credentials");
       done(null, findUser);
     } catch (error) {
       done(error, null);
